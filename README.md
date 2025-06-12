@@ -114,10 +114,7 @@ The project is organized as follows:
         *   `YOUR_WIFI_PASSWORD`
         *   `YOUR_PROJECT_ID`
         *   `YOUR_SUPABASE_ANON_KEY`
-    *   The actuator code is set up to fetch the latest command for *any* device. If you want it to respond only to commands for its specific `device_id`, you'll need to:
-        *   Determine the actuator's unique ID (e.g., using a similar `getDeviceID()` function as in the sensor).
-        *   Modify the `supabase_url` in `actuator/src/main.cpp` to filter commands by this ID, e.g., `.../irrigation_commands?select=*&device_id=eq.YOUR_ACTUATOR_DEVICE_ID&order=timestamp.desc&limit=1`.
-        *   Alternatively, fetch all recent commands and filter in the ESP32 code.
+    *   The actuator code now automatically determines its `device_id` (from MAC address) and filters commands from Supabase to only fetch those intended for itself.
 
 3.  **Build and Upload:**
     *   Open the `actuator/` directory in PlatformIO.
@@ -148,13 +145,14 @@ The project is organized as follows:
 
 2.  **ESP32 Actuator Node:**
     *   Connects to Wi-Fi.
-    *   Periodically polls the `irrigation_commands` table in Supabase (fetching the latest command) using its `anon key`.
-    *   If a command `{ "start": true, ... }` is found, it activates the irrigation relay (**TODO: Implement relay control logic**).
-    *   If a command `{ "start": false, ... }` is found, it deactivates the relay.
+    *   Generates its own unique `device_id` (from MAC address).
+    *   Periodically polls the `irrigation_commands` table in Supabase, filtering for commands matching its `device_id` (fetches the latest command for itself) using its `anon key`.
+    *   If a command `{ "start": true, ... }` is found, it activates the irrigation relay and sends an acknowledgement update to Supabase.
+    *   If a command `{ "start": false, ... }` is found, it deactivates the relay and sends an acknowledgement.
 
 3.  **Supabase:**
     *   Stores historical sensor data in `irrigation_data`.
-    *   Stores irrigation commands in `irrigation_commands`.
+    *   Stores irrigation commands in `irrigation_commands` (includes an `acknowledged` field).
     *   Manages access control via Row Level Security (RLS) policies defined in `supabase/schema.sql`.
 
 4.  **React Dashboard (Future):**
@@ -169,7 +167,8 @@ The project is organized as follows:
 🌐 Web-based Wi-Fi provisioning (WiFiManager for ESP32).  
 📦 OTA updates for ESP32 firmware.  
 🔒 Secure communication with SSL/TLS (currently using HTTPS REST).  
-🌈 More advanced data visualization in the dashboard.
+🌈 More advanced data visualization in the dashboard.  
+⏱️ Actuator to handle `duration_seconds` from commands for timed irrigation.
 
 ---
 

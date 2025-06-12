@@ -55,8 +55,15 @@ CREATE POLICY "Allow actuator to read its commands"
     ON irrigation_commands
     FOR SELECT
     TO anon, authenticated -- Assuming actuator uses anon/authenticated key
-    USING (device_id = current_setting('request.jwt.claims', true)::jsonb->>'device_id'); -- This requires device_id in JWT, or simplify to (true) and filter in ESP32 code if anon key is generic.
-    -- A simpler approach if not using device_id in JWT: USING (true) and the ESP32 filters by its own ID in the query.
+    USING (true); -- Actuator will filter by device_id in its query. Or use: (device_id = current_setting('request.jwt.claims', true)::jsonb->>'device_id') if JWT contains device_id.
+
+DROP POLICY IF EXISTS "Allow actuator to acknowledge commands" ON irrigation_commands;
+CREATE POLICY "Allow actuator to acknowledge commands"
+    ON irrigation_commands
+    FOR UPDATE
+    TO anon, authenticated
+    USING (true) -- Or (device_id = current_setting('request.jwt.claims', true)::jsonb->>'device_id')
+    WITH CHECK (true); -- Allows updating any field. For more security, restrict to only 'acknowledged' column and specific device_id.
 
 DROP POLICY IF EXISTS "Allow dashboard/admin to manage commands" ON irrigation_commands;
 CREATE POLICY "Allow dashboard/admin to manage commands"
