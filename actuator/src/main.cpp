@@ -2,54 +2,100 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+// --- WIFI & SUPABASE CREDENTIALS ---
+// TODO: Replace with your actual credentials
+// Consider using a config.h file (add to .gitignore) or WiFiManager for better security and flexibility.
 const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
-const char* supabase_url = "https://YOUR_PROJECT.supabase.co/rest/v1/irrigation_commands?select=*" ;
-const char* supabase_api_key = "YOUR_SUPABASE_API_KEY";
+const char* supabase_url = "https://YOUR_PROJECT_ID.supabase.co/rest/v1/irrigation_commands?select=*&order=timestamp.desc&limit=1"; // Fetches the latest command
+const char* supabase_anon_key = "YOUR_SUPABASE_ANON_KEY"; // Use ANON KEY for client-side access
 
 void setup() {
   Serial.begin(115200);
+  delay(100); // Short delay for serial initialization
+
+  Serial.println("\\nConnecting to WiFi...");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nWi-Fi connected!");
+  Serial.println("\\nWi-Fi connected!");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void loop() {
   checkForCommand();
-  delay(10000); // poll every 10 seconds
+  delay(10000); // Poll Supabase every 10 seconds
 }
 
 void checkForCommand() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
+    Serial.print("Checking for commands at: ");
+    Serial.println(supabase_url);
+
     http.begin(supabase_url);
-    http.addHeader("apikey", supabase_api_key);
-    http.addHeader("Authorization", String("Bearer ") + supabase_api_key);
+    http.addHeader("apikey", supabase_anon_key); // Standard header for Supabase
+    http.addHeader("Authorization", "Bearer " + String(supabase_anon_key)); // Standard header for Supabase
 
     int httpCode = http.GET();
     if (httpCode > 0) {
       String payload = http.getString();
+      Serial.print("HTTP Code: ");
+      Serial.println(httpCode);
       Serial.println("Payload: " + payload);
 
-      StaticJsonDocument<512> doc;
+      StaticJsonDocument<256> doc; // Reduced size as we only expect one command
       DeserializationError error = deserializeJson(doc, payload);
-      if (!error && doc.size() > 0) {
-        // Supabase returns an array of commands
-        bool start = doc[0]["start"]; // Example field
-        if (start) {
-          Serial.println("Start irrigation!");
-          // TODO: trigger relay
+
+      if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+        http.end();
+        return;
+      }
+
+      if (doc.is<JsonArray>() && doc.as<JsonArray>().size() > 0) {
+        JsonObject command = doc.as<JsonArray>()[0]; // Get the first (and only) command object
+        if (command.containsKey("start")) {
+          bool start = command["start"];
+          if (start) {
+            Serial.println("Received START irrigation command!");
+            // TODO: Implement actual relay activation logic here
+            // e.g., digitalWrite(RELAY_PIN, HIGH);
+          } else {
+            Serial.println("Received STOP irrigation command.");
+            // TODO: Implement actual relay deactivation logic here
+            // e.g., digitalWrite(RELAY_PIN, LOW);
+          }
         } else {
-          Serial.println("Stop irrigation.");
-          // TODO: stop relay
+          Serial.println("Command payload does not contain 'start' field.");
         }
+      } else {
+        Serial.println("No commands found or payload is not a non-empty array.");
       }
     } else {
-      Serial.println("Error on HTTP GET");
+      Serial.print("Error on HTTP GET: ");
+      Serial.println(httpCode);
+      Serial.print("Response: ");
+      Serial.println(http.getString());
     }
     http.end();
+  } else {
+    Serial.println("WiFi Disconnected. Trying to reconnect...");
+    WiFi.begin(ssid, password); // Attempt to reconnect
+    int reconnectAttempts = 0;
+    while (WiFi.status() != WL_CONNECTED && reconnectAttempts < 20) { // Try for 10 seconds
+        delay(500);
+        Serial.print(".");
+        reconnectAttempts++;
+    }
+    if(WiFi.status() != WL_CONNECTED) {
+        Serial.println("\\nFailed to reconnect to WiFi.");
+    } else {
+        Serial.println("\\nWiFi reconnected!");
+    }
   }
 }

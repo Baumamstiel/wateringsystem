@@ -36,97 +36,157 @@ Your friends can easily deploy this system at home without messing with direct d
 
 ---
 
-## ⚙️ How It Works
-
-1. **ESP32 Sensor Node**  
-   - Reads sensor data (e.g., HX711 load cell for weight, capacitive soil moisture sensor).  
-   - Sends JSON payloads (e.g., `{ "weight": 123.4, "moisture": 45.6 }`) to Supabase REST API every minute.
-
-2. **ESP32 Actuator Node**  
-   - Periodically polls Supabase for the latest irrigation command.  
-   - If `start` is `true`, activates the irrigation relay.
-
-3. **Supabase**  
-   - Acts as a central MQTT-like broker but via REST.  
-   - Stores historical data for analysis.
-
-4. **React Dashboard**  
-   - Displays live data from the database.  
-   - Allows users to send “Start/Stop irrigation” commands to Supabase.
-
----
-
 ## 📦 Project Structure
+
+The project is organized as follows:
+
 ```
-📁 firmware/
-├── esp32_sensor_node/  
-│   └──  # ESP32 code for sensor data upload
-├── esp32_actuator_node/   
-│   └──  # ESP32 code for irrigation relay control
-📁 dashboard/
-├── public/   
-│   └──  # React public assets
-├── src/   
-│   └──  # React components
-├── package.json   
-│   └──  # React dependencies
-📁 supabase/
-├── schema.sql   
-│   └──  # SQL schema for tables
-└── README.md   
-    └──  # Supabase setup instructions
+📁 wateringsystem/
+├── 📄 README.md                 # This file: Project overview, setup, and usage
+├── 📄 LICENSE                   # Project license
+├── 📁 actuator/                 # ESP32 actuator node (PlatformIO project)
+│   ├── 📄 platformio.ini         # PlatformIO configuration for the actuator
+│   ├── 📁 src/
+│   │   └── 📄 main.cpp          # Source code for the actuator ESP32
+│   ├── 📁 include/              # Header files (if any)
+│   └── 📁 lib/                  # Local libraries (if any)
+├── 📁 sensor/                   # ESP32 sensor node (PlatformIO project)
+│   ├── 📄 platformio.ini         # PlatformIO configuration for the sensor
+│   ├── 📁 src/
+│   │   └── 📄 main.cpp          # Source code for the sensor ESP32
+│   ├── 📁 include/
+│   └── 📁 lib/
+├── 📁 supabase/
+│   └── 📄 schema.sql            # SQL schema for creating Supabase tables and RLS policies
+└── 📁 dashboard/                # (Placeholder for React/Next.js dashboard application)
+    └── README.md               # TODO: Add dashboard setup instructions
 ```
 
 ---
 
 ## 🛠️ Setup
 
-### 1️⃣ Supabase
+### 1️⃣ Supabase Backend
 
-- Create a new project at [Supabase.io](https://supabase.io).
-- Create two tables:
-  - `irrigation_data` (id, weight, moisture, device_id, timestamp).
-  - `irrigation_commands` (id, start, timestamp).
-- Set up **Row Level Security (RLS)** to allow inserts/reads for your ESP32 clients.
-- Save the `API_URL` and `API_KEY` for later use.
+1.  **Create a Supabase Project:**
+    *   Go to [Supabase.io](https://supabase.io) and create a new project.
+    *   Save your **Project URL**, **anon key**, and **service_role key**. You'll need these.
+
+2.  **Set up Database Schema:**
+    *   In your Supabase project, go to the "SQL Editor".
+    *   Open the `supabase/schema.sql` file from this repository.
+    *   Copy its content and run it in the Supabase SQL editor. This will:
+        *   Create the `irrigation_data` table for sensor readings.
+        *   Create the `irrigation_commands` table for controlling the actuator.
+        *   Set up basic Row Level Security (RLS) policies.
+    *   **Important RLS Note:** The provided `schema.sql` sets up initial RLS policies. Review and customize them according to your security needs. For ESP32 devices, it's recommended to use the **anon key** and restrict its permissions via RLS.
 
 ### 2️⃣ ESP32 Sensor Node
 
-- Flash the code from `firmware/esp32_sensor_node/`.
-- Configure Wi-Fi SSID, password, and Supabase credentials.
-- Upload using PlatformIO or Arduino IDE.
+1.  **Hardware Setup:**
+    *   Connect your soil moisture sensor, HX711 load cell (or other sensors) to your ESP32.
+    *   Update the placeholder pin definitions in `sensor/src/main.cpp` if needed.
+
+2.  **Firmware Configuration:**
+    *   Open `sensor/src/main.cpp`.
+    *   Replace the following placeholders with your actual credentials:
+        *   `YOUR_WIFI_SSID`
+        *   `YOUR_WIFI_PASSWORD`
+        *   `YOUR_PROJECT_ID` (from your Supabase project URL, e.g., `https://<YOUR_PROJECT_ID>.supabase.co`)
+        *   `YOUR_SUPABASE_ANON_KEY` (the public anon key from your Supabase project)
+    *   **Recommendation:** For better security and flexibility, consider using a `config.h` file (added to `.gitignore`) or implementing WiFiManager to avoid hardcoding credentials.
+
+3.  **Build and Upload:**
+    *   Open the `sensor/` directory in PlatformIO.
+    *   Build and upload the firmware to your ESP32 sensor node.
+    *   Monitor the serial output to verify connection and data sending. The device will print its unique `Device ID` (derived from MAC address), which you might need for the actuator or dashboard.
 
 ### 3️⃣ ESP32 Actuator Node
 
-- Flash the code from `firmware/esp32_actuator_node/`.
-- Similarly configure Wi-Fi and Supabase credentials.
+1.  **Hardware Setup:**
+    *   Connect your relay module to the ESP32.
+    *   Update any placeholder pin definitions in `actuator/src/main.cpp` for relay control.
 
-### 4️⃣ React Dashboard
+2.  **Firmware Configuration:**
+    *   Open `actuator/src/main.cpp`.
+    *   Replace the following placeholders:
+        *   `YOUR_WIFI_SSID`
+        *   `YOUR_WIFI_PASSWORD`
+        *   `YOUR_PROJECT_ID`
+        *   `YOUR_SUPABASE_ANON_KEY`
+    *   The actuator code is set up to fetch the latest command for *any* device. If you want it to respond only to commands for its specific `device_id`, you'll need to:
+        *   Determine the actuator's unique ID (e.g., using a similar `getDeviceID()` function as in the sensor).
+        *   Modify the `supabase_url` in `actuator/src/main.cpp` to filter commands by this ID, e.g., `.../irrigation_commands?select=*&device_id=eq.YOUR_ACTUATOR_DEVICE_ID&order=timestamp.desc&limit=1`.
+        *   Alternatively, fetch all recent commands and filter in the ESP32 code.
 
-- Install dependencies:
-  ```bash
-  cd dashboard
-  npm install
+3.  **Build and Upload:**
+    *   Open the `actuator/` directory in PlatformIO.
+    *   Build and upload the firmware to your ESP32 actuator node.
+    *   Monitor serial output for command polling and actions.
 
+### 4️⃣ React Dashboard (Future Implementation)
 
-🌟 Future Improvements
+*   The `dashboard/` directory is a placeholder for the web interface.
+*   **TODO:** Add setup instructions once the dashboard is developed.
+    *   Typically, this would involve:
+        ```bash
+        cd dashboard
+        npm install
+        # Configure Supabase client (API URL, anon key) in the dashboard code
+        npm start
+        ```
 
-🌐 Web-based Wi-Fi provisioning (WiFiManager for ESP32).
-📦 OTA updates for ESP32 firmware.
-🔒 Secure communication with SSL/TLS (currently using HTTPS REST).
+---
+
+## ⚙️ How It Works (Updated)
+
+1.  **ESP32 Sensor Node:**
+    *   Connects to Wi-Fi.
+    *   Generates a unique `device_id` from its MAC address.
+    *   Periodically reads sensor data (e.g., HX711 load cell for weight, capacitive soil moisture sensor – **currently uses dummy data, requires implementing actual sensor reads**).
+    *   Sends JSON payloads (e.g., `{ "weight": 123.4, "moisture": 45.6, "device_id": "ABCDEF123456" }`) to the `irrigation_data` table in Supabase via REST API using its `anon key`.
+
+2.  **ESP32 Actuator Node:**
+    *   Connects to Wi-Fi.
+    *   Periodically polls the `irrigation_commands` table in Supabase (fetching the latest command) using its `anon key`.
+    *   If a command `{ "start": true, ... }` is found, it activates the irrigation relay (**TODO: Implement relay control logic**).
+    *   If a command `{ "start": false, ... }` is found, it deactivates the relay.
+
+3.  **Supabase:**
+    *   Stores historical sensor data in `irrigation_data`.
+    *   Stores irrigation commands in `irrigation_commands`.
+    *   Manages access control via Row Level Security (RLS) policies defined in `supabase/schema.sql`.
+
+4.  **React Dashboard (Future):**
+    *   Will connect to Supabase using the `anon key`.
+    *   Will display live and historical data from `irrigation_data`.
+    *   Will allow users to send "Start/Stop irrigation" commands by inserting/updating rows in the `irrigation_commands` table.
+
+---
+
+## 🌟 Future Improvements
+
+🌐 Web-based Wi-Fi provisioning (WiFiManager for ESP32).  
+📦 OTA updates for ESP32 firmware.  
+🔒 Secure communication with SSL/TLS (currently using HTTPS REST).  
 🌈 More advanced data visualization in the dashboard.
 
-📸 Screenshots
+---
 
+## 📸 Screenshots
 
 (Add real screenshots here!)
 
-🤝 Contributing
+---
+
+## 🤝 Contributing
 
 Pull requests and ideas are always welcome! Feel free to submit a PR or open an issue if you have suggestions.
 
-✨ Acknowledgments
+---
 
-Supabase for their awesome backend services.
-ArduinoJson for making JSON on microcontrollers easy.
+## ✨ Acknowledgments
+
+Supabase for their awesome backend services.  
+ArduinoJson for making JSON on microcontrollers easy.  
 ESP-IDF / ESP32 Arduino core.
