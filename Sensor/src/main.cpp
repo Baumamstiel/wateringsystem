@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <WiFiManager.h> // WiFiManager library
 #include "HX711.h" // For load cell amplifier
 #include "config.h" // Include the new config file
 
@@ -43,20 +44,38 @@ void setup() {
   Serial.begin(115200);
   delay(100); // Short delay for serial initialization
 
-  // Construct Supabase URL for the data table
-  supabase_data_table_url = "https://" + String(SUPABASE_PROJECT_ID) + ".supabase.co/rest/v1/irrigation_data";
+  // WiFiManager
+  WiFiManager wm;
+  // wm.resetSettings(); // Uncomment to reset saved settings for testing
 
-  Serial.println("\\nConnecting to WiFi...");
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+  // Set custom parameters if needed, e.g., for Supabase credentials
+  // WiFiManagerParameter custom_supabase_project_id("supabase_id", "Supabase Project ID", SUPABASE_PROJECT_ID, 40);
+  // WiFiManagerParameter custom_supabase_anon_key("supabase_key", "Supabase Anon Key", SUPABASE_ANON_KEY, 200);
+  // wm.addParameter(&custom_supabase_project_id);
+  // wm.addParameter(&custom_supabase_anon_key);
+
+  Serial.println("Starting WiFiManager...");
+  if (!wm.autoConnect("PlantSensorSetupAP")) { // AP name
+    Serial.println("Failed to connect and hit timeout");
+    delay(3000);
+    ESP.restart(); // Restart ESP if it cannot connect
+    delay(5000);
   }
-  Serial.println("\\nWi-Fi connected!");
+
+  Serial.println("\\\\nWi-Fi connected via WiFiManager!");
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
   Serial.print("Device ID: ");
   Serial.println(getDeviceID());
+
+  // Update Supabase credentials if they were part of WiFiManager custom parameters
+  // strcpy(SUPABASE_PROJECT_ID, custom_supabase_project_id.getValue());
+  // strcpy(SUPABASE_ANON_KEY, custom_supabase_anon_key.getValue());
+
+  // Construct Supabase URL for the data table
+  supabase_data_table_url = "https://" + String(SUPABASE_PROJECT_ID) + ".supabase.co/rest/v1/irrigation_data";
+  Serial.println("Supabase URL: " + supabase_data_table_url);
+
 
   // --- Initialize Sensors ---
   Serial.println("Initializing sensors...");
@@ -80,22 +99,13 @@ void loop() {
     readAndSendSensorData();
   }
 
-  // Handle WiFi reconnection if needed
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi Disconnected. Trying to reconnect...");
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
-    int reconnectAttempts = 0;
-    while (WiFi.status() != WL_CONNECTED && reconnectAttempts < 20) { // Try for 10 seconds
-        delay(500);
-        Serial.print(".");
-        reconnectAttempts++;
-    }
-    if(WiFi.status() != WL_CONNECTED) {
-        Serial.println("\\nFailed to reconnect to WiFi.");
-    } else {
-        Serial.println("\\nWiFi reconnected!");
-    }
-  }
+  // WiFiManager handles reconnection automatically, so explicit reconnection logic might not be needed
+  // or can be simplified. If WiFi drops, WiFiManager might try to reconnect or re-enter AP mode
+  // depending on its configuration. For now, we'll rely on its default behavior.
+  // if (WiFi.status() != WL_CONNECTED) {
+  //   Serial.println("WiFi Disconnected. WiFiManager should handle reconnection.");
+  //   // Potentially add a fallback or alert if WiFi remains disconnected for too long
+  // }
 }
 
 void readAndSendSensorData() {

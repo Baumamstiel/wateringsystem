@@ -1,4 +1,4 @@
-🌱 Automatic IoT Plant Irrigation System with ESP32 & Supabase
+Automatic IoT Plant Irrigation System with ESP32 & Supabase
 
 This project is a cloud-based automatic irrigation system for plant care, using **ESP32** microcontrollers, **Supabase** for data storage and remote control, and a **React** dashboard for easy management.  
 
@@ -6,37 +6,38 @@ Your friends can easily deploy this system at home without messing with direct d
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 - **ESP32 Sensor Node**  
-  📦 Reads soil moisture and plant weight  
-  ☁️ Sends data to Supabase REST API
+   Reads soil moisture and plant weight  
+   Sends data to Supabase REST API
 
 - **ESP32 Actuator Node**  
-  📦 Polls Supabase for irrigation commands  
-  💧 Activates a relay to control watering
+   Polls Supabase for irrigation commands  
+   Activates a relay to control watering
 
 - **Supabase**  
-  📊 Stores sensor data (`irrigation_data`)  
-  🟢 Stores and manages irrigation commands (`irrigation_commands`)
+   Stores sensor data (`irrigation_data`)  
+   Stores and manages irrigation commands 
+   (`irrigation_commands`)
 
 - **React Dashboard**  
-  👨‍💻 Displays live data from Supabase  
-  🕹️ Allows users to start/stop irrigation remotely
+   Displays live data from Supabase  
+   Allows users to start/stop irrigation remotely
 
 ---
 
-## 🚀 Features
+## Features
 
-✅ Wi-Fi-based communication (no cables!)  
-✅ Cloud-based data storage & control  
-✅ React dashboard for remote monitoring and control  
-✅ Easy deployment at any location with simple Wi-Fi setup  
-✅ Minimal ESP32 storage footprint – cloud handles the heavy lifting!
+ Wi-Fi-based communication (no cables!)  
+ Cloud-based data storage & control  
+ React dashboard for remote monitoring and control  
+ Easy deployment at any location with simple Wi-Fi setup  
+ Minimal ESP32 storage footprint – cloud handles the heavy lifting!
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 The project is organized as follows:
 
@@ -69,9 +70,9 @@ The project is organized as follows:
 
 ---
 
-## 🛠️ Setup
+##  Setup
 
-### 1️⃣ Supabase Backend
+### 1️ Supabase Backend
 
 1.  **Create a Supabase Project:**
     *   Go to [Supabase.io](https://supabase.io) and create a new project.
@@ -86,7 +87,7 @@ The project is organized as follows:
         *   Set up basic Row Level Security (RLS) policies.
     *   **Important RLS Note:** The provided `schema.sql` sets up initial RLS policies. Review and customize them according to your security needs. For ESP32 devices, it's recommended to use the **anon key** and restrict its permissions via RLS.
 
-### 2️⃣ ESP32 Sensor Node
+### 2️ ESP32 Sensor Node
 
 1.  **Hardware Setup:**
     *   Connect your soil moisture sensor, HX711 load cell (or other sensors) to your ESP32.
@@ -106,7 +107,7 @@ The project is organized as follows:
     *   Build and upload the firmware to your ESP32 sensor node.
     *   Monitor the serial output to verify connection and data sending. The device will print its unique `Device ID` (derived from MAC address), which you might need for the actuator or dashboard.
 
-### 3️⃣ ESP32 Actuator Node
+### 3️ ESP32 Actuator Node
 
 1.  **Hardware Setup:**
     *   Connect your relay module to the ESP32.
@@ -126,7 +127,7 @@ The project is organized as follows:
     *   Build and upload the firmware to your ESP32 actuator node.
     *   Monitor serial output for command polling and actions.
 
-### 4️⃣ React Dashboard (Future Implementation)
+### 4️ React Dashboard (Future Implementation)
 
 *   The `dashboard/` directory is a placeholder for the web interface.
 *   **TODO:** Add setup instructions once the dashboard is developed.
@@ -140,7 +141,7 @@ The project is organized as follows:
 
 ---
 
-## ⚙️ How It Works (Updated)
+##  How It Works (Updated)
 
 1.  **ESP32 Sensor Node:**
     *   Connects to Wi-Fi.
@@ -167,30 +168,30 @@ The project is organized as follows:
 
 ---
 
-## 🌟 Future Improvements
+##  Future Improvements
 
-🌐 Web-based Wi-Fi provisioning (WiFiManager for ESP32).  
-📦 OTA updates for ESP32 firmware.  
-🔒 Secure communication with SSL/TLS (currently using HTTPS REST).  
-🌈 More advanced data visualization in the dashboard.  
-⏱️ Actuator to handle `duration_seconds` from commands for timed irrigation. (Implemented)
-
----
-
-## 📸 Screenshots
-
-(Add real screenshots here!)
+- Web-based Wi-Fi provisioning (WiFiManager for ESP32).  
+- OTA updates for ESP32 firmware.  
+- Secure communication with SSL/TLS (currently using HTTPS REST).  
+- More advanced data visualization in the dashboard.  
+- Actuator to handle `duration_seconds` from commands for timed irrigation. (Implemented)
 
 ---
 
-## 🤝 Contributing
+##  Screenshots
+
+...
+
+---
+
+##  Contributing
 
 Pull requests and ideas are always welcome! Feel free to submit a PR or open an issue if you have suggestions.
 
 ---
 
-## ✨ Acknowledgments
+##  Acknowledgments
 
-Supabase for their awesome backend services.  
+Supabase for their backend services.  
 ArduinoJson for making JSON on microcontrollers easy.  
 ESP-IDF / ESP32 Arduino core.
