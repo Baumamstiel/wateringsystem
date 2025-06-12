@@ -57,18 +57,25 @@ Your friends can easily deploy this system at home without messing with direct d
 ---
 
 ## 📦 Project Structure
-
+```
 📁 firmware/
-├── esp32_sensor_node/ # ESP32 code for sensor data upload
-├── esp32_actuator_node/ # ESP32 code for irrigation relay control
+├── esp32_sensor_node/  
+│   └──  # ESP32 code for sensor data upload
+├── esp32_actuator_node/   
+│   └──  # ESP32 code for irrigation relay control
 📁 dashboard/
-├── public/ # React public assets
-├── src/ # React components
-├── package.json # React dependencies
+├── public/   
+│   └──  # React public assets
+├── src/   
+│   └──  # React components
+├── package.json   
+│   └──  # React dependencies
 📁 supabase/
-├── schema.sql # SQL schema for tables
-├── README.md # Supabase setup instructions
-
+├── schema.sql   
+│   └──  # SQL schema for tables
+└── README.md   
+    └──  # Supabase setup instructions
+```
 
 ---
 
