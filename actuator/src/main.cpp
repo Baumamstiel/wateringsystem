@@ -18,6 +18,11 @@ String actuatorDeviceID = ""; // Will be set in setup
 const int RELAY_PIN = 16; // Example GPIO pin for the relay, adjust to your wiring
                           // Choose a suitable GPIO pin on your ESP32 that is not used for other purposes.
 
+// --- IRRIGATION STATE ---
+bool isIrrigating = false;
+unsigned long irrigationStartTime = 0;
+int currentIrrigationDuration = 0; // in seconds
+
 void setup() {
   Serial.begin(115200);
   delay(100); // Short delay for serial initialization
@@ -47,6 +52,7 @@ void setup() {
 
 void loop() {
   checkForCommand();
+  manageIrrigationCycle(); // Manage timed irrigation
   delay(10000); // Poll Supabase every 10 seconds
 }
 
@@ -102,12 +108,11 @@ void checkForCommand() {
     HTTPClient http;
     // Filter commands for this specific actuator, get the latest unacknowledged, or latest overall if none unacknowledged.
     // This logic can be refined. For now, just getting the latest for this device.
-    String getUrl = supabase_commands_table_url + \
-                    "?select=*&device_id=eq." + actuatorDeviceID + \
-                    "&order=timestamp.desc&limit=1"; 
-                    // Consider adding "&acknowledged=is.false" to only get pending commands,
-                    // but this might miss a 'stop' if the 'start' was missed and acknowledged.
-                    // Simpler to get the latest command for the device and let its state (start: true/false) dictate action.
+    String getUrl = supabase_commands_table_url + \\
+                    "?select=*&device_id=eq." + actuatorDeviceID + \\
+                    "&acknowledged=is.false" + // Only fetch unacknowledged commands
+                    "&order=timestamp.asc&limit=1"; // Get the oldest unacknowledged command
+                    // Fetching oldest unacknowledged ensures we process in order.
 
     Serial.print("Checking for commands at: ");
     Serial.println(getUrl);
@@ -145,24 +150,47 @@ void checkForCommand() {
           return;
         }
 
+        // It's important to acknowledge a command *after* its action is fully processed
+        // or, in the case of timed irrigation, after it's initiated.
+
         if (command.containsKey("start")) {
-          bool start = command["start"];
-          if (start) {
+          bool start_command = command["start"];
+
+          if (start_command) {
             Serial.println("Received START irrigation command!");
             digitalWrite(RELAY_PIN, HIGH); // Turn relay ON
+            isIrrigating = true;
+            irrigationStartTime = millis();
+            
+            if (command.containsKey("duration_seconds") && !command["duration_seconds"].isNull()) {
+              currentIrrigationDuration = command["duration_seconds"].as<int>();
+              Serial.print("Irrigation duration set to: ");
+              Serial.print(currentIrrigationDuration);
+              Serial.println(" seconds.");
+            } else {
+              currentIrrigationDuration = 0; // Means indefinite, or rely on manual stop
+              Serial.println("No duration specified, pump will run until a STOP command or manual stop.");
+            }
             Serial.println("Relay turned ON.");
-            acknowledgeCommand(commandId);
-          } else {
+            acknowledgeCommand(commandId); // Acknowledge after initiating
+          } else { // start_command is false
             Serial.println("Received STOP irrigation command.");
             digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+            isIrrigating = false;
+            irrigationStartTime = 0;
+            currentIrrigationDuration = 0;
             Serial.println("Relay turned OFF.");
-            acknowledgeCommand(commandId);
+            acknowledgeCommand(commandId); // Acknowledge after stopping
           }
         } else {
           Serial.println("Command payload does not contain 'start' field.");
+          // If a command doesn't have 'start', it's malformed for our use case.
+          // We could acknowledge it to remove it from the queue or log an error.
+          // For now, let's acknowledge it to prevent it from blocking other commands.
+          acknowledgeCommand(commandId);
         }
       } else {
-        Serial.println("No commands found or payload is not a non-empty array.");
+        Serial.println("No new unacknowledged commands found.");
       }
     } else {
       Serial.print("Error on HTTP GET: ");
@@ -184,6 +212,20 @@ void checkForCommand() {
         Serial.println("\\nFailed to reconnect to WiFi.");
     } else {
         Serial.println("\\nWiFi reconnected!");
+    }
+  }
+}
+
+void manageIrrigationCycle() {
+  if (isIrrigating && currentIrrigationDuration > 0) {
+    unsigned long elapsedTime = millis() - irrigationStartTime;
+    if (elapsedTime >= (unsigned long)currentIrrigationDuration * 1000) {
+      Serial.println("Irrigation duration elapsed. Turning relay OFF.");
+      digitalWrite(RELAY_PIN, LOW);
+      isIrrigating = false;
+      // Optionally, reset irrigationStartTime and currentIrrigationDuration here,
+      // but they will be reset by the next command anyway.
+      // Consider if a separate "completed" state is needed or if just setting isIrrigating = false is enough.
     }
   }
 }
