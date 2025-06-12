@@ -1,0 +1,14 @@
+# Ignore IDE project files
+.vscode/
+.idea/
+
+# Ignore build artifacts
+.pio/
+
+# Ignore sensitive configuration files
+actuator/include/config.h
+sensor/include/config.h
+
+# Ignore OS-specific files
+.DS_Store
+*.swp

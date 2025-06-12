@@ -44,17 +44,22 @@ The project is organized as follows:
 📁 wateringsystem/
 ├── 📄 README.md                 # This file: Project overview, setup, and usage
 ├── 📄 LICENSE                   # Project license
+├── 📄 .gitignore                # Specifies intentionally untracked files that Git should ignore
 ├── 📁 actuator/                 # ESP32 actuator node (PlatformIO project)
 │   ├── 📄 platformio.ini         # PlatformIO configuration for the actuator
 │   ├── 📁 src/
 │   │   └── 📄 main.cpp          # Source code for the actuator ESP32
-│   ├── 📁 include/              # Header files (if any)
+│   ├── 📁 include/
+│   │   ├── 📄 config.h          # (Gitignored) Actual WiFi & Supabase credentials
+│   │   └── 📄 config.h.example  # Template for config.h
 │   └── 📁 lib/                  # Local libraries (if any)
 ├── 📁 sensor/                   # ESP32 sensor node (PlatformIO project)
 │   ├── 📄 platformio.ini         # PlatformIO configuration for the sensor
 │   ├── 📁 src/
 │   │   └── 📄 main.cpp          # Source code for the sensor ESP32
 │   ├── 📁 include/
+│   │   ├── 📄 config.h          # (Gitignored) Actual WiFi & Supabase credentials
+│   │   └── 📄 config.h.example  # Template for config.h
 │   └── 📁 lib/
 ├── 📁 supabase/
 │   └── 📄 schema.sql            # SQL schema for creating Supabase tables and RLS policies
@@ -88,13 +93,13 @@ The project is organized as follows:
     *   Update the placeholder pin definitions in `sensor/src/main.cpp` if needed.
 
 2.  **Firmware Configuration:**
-    *   Open `sensor/src/main.cpp`.
-    *   Replace the following placeholders with your actual credentials:
-        *   `YOUR_WIFI_SSID`
-        *   `YOUR_WIFI_PASSWORD`
-        *   `YOUR_PROJECT_ID` (from your Supabase project URL, e.g., `https://<YOUR_PROJECT_ID>.supabase.co`)
-        *   `YOUR_SUPABASE_ANON_KEY` (the public anon key from your Supabase project)
-    *   **Recommendation:** For better security and flexibility, consider using a `config.h` file (added to `.gitignore`) or implementing WiFiManager to avoid hardcoding credentials.
+    *   Navigate to the `sensor/include/` directory.
+    *   Copy `config.h.example` to a new file named `config.h` in the same directory.
+    *   Open `sensor/include/config.h` and replace the placeholder values for:
+        *   `WIFI_SSID`
+        *   `WIFI_PASSWORD`
+        *   (Supabase credentials should be pre-filled if you used the script, otherwise update `SUPABASE_PROJECT_ID` and `SUPABASE_ANON_KEY`)
+    *   **Important:** The `sensor/include/config.h` file is already listed in `.gitignore` to prevent your actual credentials from being committed to the repository.
 
 3.  **Build and Upload:**
     *   Open the `sensor/` directory in PlatformIO.
@@ -108,13 +113,13 @@ The project is organized as follows:
     *   Update any placeholder pin definitions in `actuator/src/main.cpp` for relay control.
 
 2.  **Firmware Configuration:**
-    *   Open `actuator/src/main.cpp`.
-    *   Replace the following placeholders:
-        *   `YOUR_WIFI_SSID`
-        *   `YOUR_WIFI_PASSWORD`
-        *   `YOUR_PROJECT_ID`
-        *   `YOUR_SUPABASE_ANON_KEY`
-    *   The actuator code now automatically determines its `device_id` (from MAC address) and filters commands from Supabase to only fetch those intended for itself.
+    *   Navigate to the `actuator/include/` directory.
+    *   Copy `config.h.example` to a new file named `config.h` in the same directory.
+    *   Open `actuator/include/config.h` and replace the placeholder values for:
+        *   `WIFI_SSID`
+        *   `WIFI_PASSWORD`
+        *   (Supabase credentials should be pre-filled, otherwise update `SUPABASE_PROJECT_ID` and `SUPABASE_ANON_KEY`)
+    *   **Important:** The `actuator/include/config.h` file is already listed in `.gitignore`.
 
 3.  **Build and Upload:**
     *   Open the `actuator/` directory in PlatformIO.
@@ -168,7 +173,7 @@ The project is organized as follows:
 📦 OTA updates for ESP32 firmware.  
 🔒 Secure communication with SSL/TLS (currently using HTTPS REST).  
 🌈 More advanced data visualization in the dashboard.  
-⏱️ Actuator to handle `duration_seconds` from commands for timed irrigation.
+⏱️ Actuator to handle `duration_seconds` from commands for timed irrigation. (Implemented)
 
 ---
 
