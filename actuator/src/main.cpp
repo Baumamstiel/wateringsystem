@@ -10,9 +10,18 @@ const char* password = "YOUR_WIFI_PASSWORD";
 const char* supabase_url = "https://YOUR_PROJECT_ID.supabase.co/rest/v1/irrigation_commands?select=*&order=timestamp.desc&limit=1"; // Fetches the latest command
 const char* supabase_anon_key = "YOUR_SUPABASE_ANON_KEY"; // Use ANON KEY for client-side access
 
+// --- RELAY CONFIGURATION ---
+const int RELAY_PIN = 16; // Example GPIO pin for the relay, adjust to your wiring
+                          // Choose a suitable GPIO pin on your ESP32 that is not used for other purposes.
+
 void setup() {
   Serial.begin(115200);
   delay(100); // Short delay for serial initialization
+
+  // Initialize Relay Pin
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW); // Ensure relay is OFF by default
+  Serial.println("Relay pin initialized and set to OFF.");
 
   Serial.println("\\nConnecting to WiFi...");
   WiFi.begin(ssid, password);
@@ -63,12 +72,15 @@ void checkForCommand() {
           bool start = command["start"];
           if (start) {
             Serial.println("Received START irrigation command!");
-            // TODO: Implement actual relay activation logic here
-            // e.g., digitalWrite(RELAY_PIN, HIGH);
+            digitalWrite(RELAY_PIN, HIGH); // Turn relay ON
+            Serial.println("Relay turned ON.");
+            // TODO: Consider sending an acknowledgement back to Supabase
+            // e.g., update the 'acknowledged' field for this command
           } else {
             Serial.println("Received STOP irrigation command.");
-            // TODO: Implement actual relay deactivation logic here
-            // e.g., digitalWrite(RELAY_PIN, LOW);
+            digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+            Serial.println("Relay turned OFF.");
+            // TODO: Consider sending an acknowledgement back to Supabase
           }
         } else {
           Serial.println("Command payload does not contain 'start' field.");
