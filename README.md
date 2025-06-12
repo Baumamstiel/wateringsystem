@@ -1,4 +1,4 @@
-# wateringsystem# 🌱 Automatic IoT Plant Irrigation System with ESP32 & Supabase
+🌱 Automatic IoT Plant Irrigation System with ESP32 & Supabase
 
 This project is a cloud-based automatic irrigation system for plant care, using **ESP32** microcontrollers, **Supabase** for data storage and remote control, and a **React** dashboard for easy management.  
 
