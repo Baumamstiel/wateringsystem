@@ -1,0 +1,12 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// WiFi Credentials - Replace with your actual SSID and Password
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+
+// Supabase Credentials - Replace with your actual Project ID and Anon Key
+#define SUPABASE_PROJECT_ID "YOUR_SUPABASE_PROJECT_ID"
+#define SUPABASE_ANON_KEY "YOUR_SUPABASE_ANON_KEY"
+
+#endif // CONFIG_H

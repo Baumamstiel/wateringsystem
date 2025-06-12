@@ -1,15 +1,14 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "config.h" // Include the new config file
 
 // --- WIFI & SUPABASE CREDENTIALS ---
-// TODO: Replace with your actual credentials
-// Consider using a config.h file (add to .gitignore) or WiFiManager for better security and flexibility.
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-// const char* supabase_url = "https://YOUR_PROJECT_ID.supabase.co/rest/v1/irrigation_commands?select=*&order=timestamp.desc&limit=1"; // Old URL
-const char* supabase_project_id = "YOUR_PROJECT_ID"; // Define your Supabase project ID here
-const char* supabase_anon_key = "YOUR_SUPABASE_ANON_KEY"; // Use ANON KEY for client-side access
+// Credentials are now sourced from config.h
+// const char* ssid = "YOUR_WIFI_SSID"; // From config.h
+// const char* password = "YOUR_WIFI_PASSWORD"; // From config.h
+// const char* supabase_project_id = "pedfmureqmgrgoytgtkx"; // From config.h
+// const char* supabase_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZGZtdXJlcW1ncmdveXRndGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NzIwNDEsImV4cCI6MjA2NTA0ODA0MX0.5jXdxoqGBEiwytHvIkkmcWUzQoMxLlfNf0FTCT6GR-s"; // From config.h
 
 String supabase_commands_table_url = ""; // Will be constructed in setup
 String actuatorDeviceID = ""; // Will be set in setup
@@ -32,7 +31,7 @@ void setup() {
   Serial.println(actuatorDeviceID);
 
   // Construct Supabase URLs
-  supabase_commands_table_url = "https://" + String(supabase_project_id) + ".supabase.co/rest/v1/irrigation_commands";
+  supabase_commands_table_url = "https://" + String(SUPABASE_PROJECT_ID) + ".supabase.co/rest/v1/irrigation_commands";
 
   // Initialize Relay Pin
   pinMode(RELAY_PIN, OUTPUT);
@@ -40,7 +39,7 @@ void setup() {
   Serial.println("Relay pin initialized and set to OFF.");
 
   Serial.println("\\nConnecting to WiFi...");
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -69,8 +68,8 @@ void acknowledgeCommand(long commandId) {
   String patchUrl = supabase_commands_table_url + "?id=eq." + String(commandId);
 
   http.begin(patchUrl);
-  http.addHeader("apikey", supabase_anon_key);
-  http.addHeader("Authorization", "Bearer " + String(supabase_anon_key));
+  http.addHeader("apikey", SUPABASE_ANON_KEY); // Use credential from config.h
+  http.addHeader("Authorization", "Bearer " + String(SUPABASE_ANON_KEY)); // Use credential from config.h
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Prefer", "return=minimal"); // Ask Supabase to return no content
 
@@ -118,8 +117,8 @@ void checkForCommand() {
     Serial.println(getUrl);
 
     http.begin(getUrl);
-    http.addHeader("apikey", supabase_anon_key); // Standard header for Supabase
-    http.addHeader("Authorization", "Bearer " + String(supabase_anon_key)); // Standard header for Supabase
+    http.addHeader("apikey", SUPABASE_ANON_KEY); // Use credential from config.h
+    http.addHeader("Authorization", "Bearer " + String(SUPABASE_ANON_KEY)); // Use credential from config.h
 
     int httpCode = http.GET();
     if (httpCode > 0) {
@@ -201,7 +200,7 @@ void checkForCommand() {
     http.end();
   } else {
     Serial.println("WiFi Disconnected. Trying to reconnect...");
-    WiFi.begin(ssid, password); // Attempt to reconnect
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
     int reconnectAttempts = 0;
     while (WiFi.status() != WL_CONNECTED && reconnectAttempts < 20) { // Try for 10 seconds
         delay(500);

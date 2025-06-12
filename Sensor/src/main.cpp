@@ -2,14 +2,16 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "HX711.h" // For load cell amplifier
+#include "config.h" // Include the new config file
 
 // --- WIFI & SUPABASE CREDENTIALS ---
-// TODO: Replace with your actual credentials
-// Consider using a config.h file (add to .gitignore) or WiFiManager for better security and flexibility.
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-const char* supabase_url = "https://YOUR_PROJECT_ID.supabase.co/rest/v1/irrigation_data";
-const char* supabase_anon_key = "YOUR_SUPABASE_ANON_KEY"; // Use ANON KEY for client-side access
+// Credentials are now sourced from config.h
+// const char* ssid = "YOUR_WIFI_SSID";
+// const char* password = "YOUR_WIFI_PASSWORD";
+// const char* supabase_url = "https://pedfmureqmgrgoytgtkx.supabase.co/rest/v1/irrigation_data"; // From config.h
+// const char* supabase_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBlZGZtdXJlcW1ncmdveXRndGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0NzIwNDEsImV4cCI6MjA2NTA0ODA0MX0.5jXdxoqGBEiwytHvIkkmcWUzQoMxLlfNf0FTCT6GR-s"; // From config.h
+
+String supabase_data_table_url = ""; // Will be constructed in setup
 
 // --- SENSOR CONFIGURATION ---
 // HX711 Load Cell
@@ -41,8 +43,11 @@ void setup() {
   Serial.begin(115200);
   delay(100); // Short delay for serial initialization
 
+  // Construct Supabase URL for the data table
+  supabase_data_table_url = "https://" + String(SUPABASE_PROJECT_ID) + ".supabase.co/rest/v1/irrigation_data";
+
   Serial.println("\\nConnecting to WiFi...");
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -78,7 +83,7 @@ void loop() {
   // Handle WiFi reconnection if needed
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi Disconnected. Trying to reconnect...");
-    WiFi.begin(ssid, password); // Attempt to reconnect
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Use credentials from config.h
     int reconnectAttempts = 0;
     while (WiFi.status() != WL_CONNECTED && reconnectAttempts < 20) { // Try for 10 seconds
         delay(500);
@@ -121,10 +126,10 @@ void readAndSendSensorData() {
     Serial.print("Moisture: "); Serial.println(moisture);
 
     HTTPClient http;
-    http.begin(supabase_url);
+    http.begin(supabase_data_table_url); // Use constructed URL
     http.addHeader("Content-Type", "application/json");
-    http.addHeader("apikey", supabase_anon_key); // Standard header for Supabase
-    http.addHeader("Authorization", "Bearer " + String(supabase_anon_key)); // Standard header for Supabase
+    http.addHeader("apikey", SUPABASE_ANON_KEY); // Use credential from config.h
+    http.addHeader("Authorization", "Bearer " + String(SUPABASE_ANON_KEY)); // Use credential from config.h
 
     StaticJsonDocument<256> doc; // Increased size slightly for more data if needed
     doc["weight"] = weight;
