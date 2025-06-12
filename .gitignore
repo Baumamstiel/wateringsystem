@@ -1,7 +1,7 @@
 # Ignore IDE project files
 .vscode/
 .idea/
-
+.discussion/
 # Ignore build artifacts
 .pio/
 
