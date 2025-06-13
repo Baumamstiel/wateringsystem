@@ -1,7 +1,8 @@
 # Ignore IDE project files
 .vscode/
 .idea/
-.discussion/
+# .discussion/ # Commenting out or removing if discussion.md is preferred
+discussion.md # Add this line to ignore the specific file
 # Ignore build artifacts
 .pio/
 
