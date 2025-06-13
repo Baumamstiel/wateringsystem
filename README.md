@@ -29,11 +29,13 @@ Your friends can easily deploy this system at home without messing with direct d
 
 ## Features
 
- Wi-Fi-based communication (no cables!)  
+ HX711 weight scale, pump and soil moisture sensor control 
+ Wi-Fi-based communication   
  Cloud-based data storage & control  
  React dashboard for remote monitoring and control  
  Easy deployment at any location with simple Wi-Fi setup  
- Minimal ESP32 storage footprint – cloud handles the heavy lifting!
+ Minimal ESP32 storage
+ 
 
 ---
 
